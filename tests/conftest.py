@@ -1,9 +1,10 @@
 import os
 
+os.environ["APP_ENV"] = "sandbox"
 os.environ.setdefault("POSTGRES_USER", "test")
 os.environ.setdefault("POSTGRES_PASSWORD", "test")
 os.environ.setdefault("POSTGRES_DB", "test")
-os.environ.setdefault("SECRET_KEY", "test-secret-key-for-pytest-only")
+os.environ.setdefault("SECRET_KEY", "test-secret-key-for-pytest-only-0123456789")
 
 from datetime import datetime, timedelta, timezone  # noqa: E402
 

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Вхід — WorkSpace</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap"><a class="logo" href="/">WorkSpace</a></div>
+  </header>
+
+  <main class="wrap" style="max-width: 440px">
+    <div class="card">
+      <div class="tabs">
+        <button class="btn" id="tab-login" type="button">Вхід</button>
+        <button class="btn ghost" id="tab-register" type="button">Реєстрація</button>
+      </div>
+
+      <form id="login-form">
+        <label>Email <input name="username" type="email" required autocomplete="email"></label>
+        <label>Пароль <input name="password" type="password" required autocomplete="current-password"></label>
+        <button class="btn" type="submit">Увійти</button>
+      </form>
+
+      <form id="register-form" class="hidden">
+        <label>Ім'я <input name="full_name" required></label>
+        <label>Email <input name="email" type="email" required autocomplete="email"></label>
+        <label>Пароль (від 8 символів)
+          <input name="password" type="password" minlength="8" required autocomplete="new-password"></label>
+        <button class="btn" type="submit">Зареєструватися</button>
+      </form>
+      <p class="msg" id="msg"></p>
+    </div>
+  </main>
+
+  <script src="/app.js"></script>
+  <script>
+    const loginForm = document.getElementById("login-form");
+    const registerForm = document.getElementById("register-form");
+    const msg = document.getElementById("msg");
+
+    function showTab(name) {
+      const isLogin = name === "login";
+      loginForm.classList.toggle("hidden", !isLogin);
+      registerForm.classList.toggle("hidden", isLogin);
+      document.getElementById("tab-login").className = "btn" + (isLogin ? "" : " ghost");
+      document.getElementById("tab-register").className = "btn" + (isLogin ? " ghost" : "");
+      msg.textContent = "";
+    }
+    document.getElementById("tab-login").onclick = () => showTab("login");
+    document.getElementById("tab-register").onclick = () => showTab("register");
+    if (location.hash === "#register") showTab("register");
+
+    async function loginAndGo(email, password) {
+      const data = await api("/auth/login", { method: "POST", form: { username: email, password } });
+      setToken(data.access_token);
+      const me = await api("/users/me");
+      location.href = me.role === "admin" ? "/admin.html" : "/dashboard.html";
+    }
+
+    loginForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const f = new FormData(loginForm);
+      try { await loginAndGo(f.get("username"), f.get("password")); }
+      catch (err) { showMsg(msg, err.message); }
+    };
+
+    registerForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const f = Object.fromEntries(new FormData(registerForm));
+      try {
+        await api("/auth/register", { method: "POST", body: f });
+        await loginAndGo(f.email, f.password);
+      } catch (err) { showMsg(msg, err.message); }
+    };
+  </script>
+</body>
+</html>

@@ -84,3 +84,11 @@ def test_admin_can_update_any_profile(client, headers_admin, user_b):
         f"/users/{user_b.id}", json={"full_name": "ByAdmin"}, headers=headers_admin
     )
     assert response.status_code == 200
+
+
+def test_web_pages_are_served(client):
+    for page in ("/", "/login.html", "/dashboard.html", "/admin.html"):
+        response = client.get(page)
+        assert response.status_code == 200
+        assert "text/html" in response.headers["content-type"]
+    assert client.get("/info").json()["env"] == "sandbox"

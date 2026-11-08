@@ -1,0 +1,33 @@
+[2026-11-08 21:27:26,518] vm/INFO/locust.main: Starting Locust 2.47.0
+[2026-11-08 21:27:26,519] vm/INFO/locust.main: Run time limit set to 180 seconds
+[2026-11-08 21:27:26,519] vm/INFO/locust.runners: Ramping to 50 users at a rate of 5.00 per second
+[2026-11-08 21:27:35,532] vm/INFO/locust.runners: All users spawned: {"CoworkingClient": 50} (50 total users)
+[2026-11-08 21:30:26,519] vm/INFO/locust.main: --run-time limit reached, shutting down
+[2026-11-08 21:30:26,531] vm/INFO/locust.main: Shutting down (exit code 0)
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      GET /bookings/my                                                                 865     0(0.00%) |      6       3      63      5 |    4.81        0.00
+GET      GET /locations                                                                   830     0(0.00%) |      6       3      59      5 |    4.61        0.00
+GET      GET /resources                                                                  1377     0(0.00%) |      6       3      59      5 |    7.65        0.00
+GET      GET /users/me                                                                    541     0(0.00%) |      4       2      47      4 |    3.01        0.00
+POST     POST /auth/login                                                                  50     0(0.00%) |    244     151     319    250 |    0.28        0.00
+POST     POST /auth/register                                                               50     0(0.00%) |    243     108     315    260 |    0.28        0.00
+POST     POST /bookings                                                                   483     0(0.00%) |      9       4      30     10 |    2.68        0.00
+POST     POST /bookings/{id}/cancel                                                       198     0(0.00%) |      8       5      29      8 |    1.10        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                      4394     0(0.00%) |     11       2     319      6 |   24.42        0.00
+
+Response time percentiles (approximated)
+Type     Name                                                                                  50%    66%    75%    80%    90%    95%    98%    99%  99.9% 99.99%   100% # reqs
+--------|--------------------------------------------------------------------------------|--------|------|------|------|------|------|------|------|------|------|------|------
+GET      GET /bookings/my                                                                        5      6      6      7      7      9     14     48     64     64     64    865
+GET      GET /locations                                                                          5      6      6      6      7      9     26     48     60     60     60    830
+GET      GET /resources                                                                          5      6      6      7      8      9     11     17     56     60     60   1377
+GET      GET /users/me                                                                           4      5      5      5      6      6      7     11     48     48     48    541
+POST     POST /auth/login                                                                      250    260    260    270    280    300    320    320    320    320    320     50
+POST     POST /auth/register                                                                   260    270    280    290    310    310    320    320    320    320    320     50
+POST     POST /bookings                                                                         10     10     11     11     12     14     15     20     31     31     31    483
+POST     POST /bookings/{id}/cancel                                                              8      9      9     10     11     13     15     23     30     30     30    198
+--------|--------------------------------------------------------------------------------|--------|------|------|------|------|------|------|------|------|------|------|------
+         Aggregated                                                                              6      6      7      8     10     13    200    260    310    320    320   4394
+

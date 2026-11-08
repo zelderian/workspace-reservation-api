@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Адмін-панель — WorkSpace</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <a class="logo" href="/">WorkSpace · admin</a>
+      <nav>
+        <span class="muted" id="who"></span>
+        <a href="/dashboard.html">Кабінет</a>
+        <button class="btn small ghost" onclick="logout()">Вийти</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h1>Адмін-панель</h1>
+    <p class="msg" id="denied"></p>
+
+    <div id="content" class="hidden">
+      <div class="grid">
+        <section class="card">
+          <h2>Нова локація</h2>
+          <form id="location-form">
+            <label>Назва <input name="name" required></label>
+            <label>Місто <input name="city" required></label>
+            <label>Адреса <input name="address" required></label>
+            <button class="btn" type="submit">Додати локацію</button>
+            <p class="msg" id="location-msg"></p>
+          </form>
+        </section>
+
+        <section class="card">
+          <h2>Новий ресурс</h2>
+          <form id="resource-form">
+            <label>Локація <select name="location_id" id="location-select" required></select></label>
+            <label>Назва <input name="name" required placeholder="Переговорна «Дніпро»"></label>
+            <div class="row">
+              <label>Тип
+                <select name="type">
+                  <option value="desk">Робоче місце</option>
+                  <option value="meeting_room">Переговорна</option>
+                  <option value="hall">Конференц-зал</option>
+                </select>
+              </label>
+              <label>Місткість <input name="capacity" type="number" min="1" value="4" required></label>
+              <label>Ціна, грн/год <input name="price_per_hour" type="number" min="0" step="0.01" value="100" required></label>
+            </div>
+            <button class="btn" type="submit">Додати ресурс</button>
+            <p class="msg" id="resource-msg"></p>
+          </form>
+        </section>
+      </div>
+
+      <section class="card">
+        <h2>Усі бронювання</h2>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>#</th><th>Користувач</th><th>Ресурс</th><th>Початок</th><th>Кінець</th><th>Статус</th><th></th></tr></thead>
+            <tbody id="bookings"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Користувачі</h2>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>#</th><th>Email</th><th>Ім'я</th><th>Роль</th></tr></thead>
+            <tbody id="users"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="/app.js"></script>
+  <script>
+    let users = [];
+    let resources = [];
+
+    async function loadLocations() {
+      const locations = await api("/locations");
+      document.getElementById("location-select").innerHTML = locations
+        .map((l) => `<option value="${l.id}">${esc(l.name)}, ${esc(l.city)}</option>`).join("");
+    }
+
+    async function loadBookings() {
+      resources = await api("/resources");
+      const items = await api("/bookings");
+      items.sort((a, b) => b.id - a.id);
+      const userEmail = (id) => (users.find((u) => u.id === id) || {}).email || `#${id}`;
+      const resName = (id) => (resources.find((r) => r.id === id) || {}).name || `#${id}`;
+      document.getElementById("bookings").innerHTML = items.length ? items.map((b) => `
+        <tr>
+          <td>${b.id}</td>
+          <td>${esc(userEmail(b.user_id))}</td>
+          <td>${esc(resName(b.resource_id))}</td>
+          <td>${fmtDate(b.starts_at)}</td>
+          <td>${fmtDate(b.ends_at)}</td>
+          <td><span class="badge ${b.status}">${b.status === "confirmed" ? "підтверджено" : "скасовано"}</span></td>
+          <td>${b.status === "confirmed"
+            ? `<button class="btn small danger" onclick="cancelBooking(${b.id})">Скасувати</button>` : ""}</td>
+        </tr>`).join("") : '<tr><td colspan="7" class="muted">Бронювань поки немає.</td></tr>';
+    }
+
+    async function loadUsers() {
+      users = await api("/users");
+      document.getElementById("users").innerHTML = users.map((u) => `
+        <tr><td>${u.id}</td><td>${esc(u.email)}</td><td>${esc(u.full_name)}</td>
+        <td>${u.role === "admin" ? "адміністратор" : "користувач"}</td></tr>`).join("");
+    }
+
+    async function cancelBooking(id) {
+      await api(`/bookings/${id}/cancel`, { method: "POST" });
+      await loadBookings();
+    }
+
+    document.getElementById("location-form").onsubmit = async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("location-msg");
+      try {
+        await api("/locations", { method: "POST", body: Object.fromEntries(new FormData(e.target)) });
+        e.target.reset();
+        showMsg(msg, "Локацію додано", true);
+        await loadLocations();
+      } catch (err) { showMsg(msg, err.message); }
+    };
+
+    document.getElementById("resource-form").onsubmit = async (e) => {
+      e.preventDefault();
+      const f = Object.fromEntries(new FormData(e.target));
+      const msg = document.getElementById("resource-msg");
+      try {
+        await api("/resources", {
+          method: "POST",
+          body: { ...f, location_id: Number(f.location_id), capacity: Number(f.capacity) },
+        });
+        showMsg(msg, "Ресурс додано", true);
+        await loadBookings();
+      } catch (err) { showMsg(msg, err.message); }
+    };
+
+    (async () => {
+      const me = await requireUser();
+      if (!me) return;
+      document.getElementById("who").textContent = me.email;
+      if (me.role !== "admin") {
+        showMsg(document.getElementById("denied"), "Доступ лише для адміністраторів (403).");
+        return;
+      }
+      document.getElementById("content").classList.remove("hidden");
+      await loadUsers();
+      await loadLocations();
+      await loadBookings();
+    })();
+  </script>
+</body>
+</html>

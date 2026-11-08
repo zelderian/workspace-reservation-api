@@ -1,0 +1,14 @@
+Method,Name,Error,Occurrences,First Seen,Last Seen
+GET,GET /resources,HTTPError('500 Server Error: Internal Server Error for url: GET /resources'),39,2026-11-08T21:12:08Z,2026-11-08T21:13:10Z
+GET,GET /users/me,HTTPError('401 Client Error: Unauthorized for url: GET /users/me'),1,2026-11-08T21:12:32Z,2026-11-08T21:12:32Z
+POST,POST /auth/register,HTTPError('500 Server Error: Internal Server Error for url: POST /auth/register'),19,2026-11-08T21:12:39Z,2026-11-08T21:13:09Z
+GET,GET /bookings/my,HTTPError('500 Server Error: Internal Server Error for url: GET /bookings/my'),16,2026-11-08T21:12:08Z,2026-11-08T21:13:10Z
+GET,GET /users/me,HTTPError('500 Server Error: Internal Server Error for url: GET /users/me'),16,2026-11-08T21:12:08Z,2026-11-08T21:13:10Z
+GET,GET /bookings/my,"ConnectionResetError(104, 'Connection reset by peer')",1,2026-11-08T21:12:39Z,2026-11-08T21:12:39Z
+POST,POST /auth/login,"ConnectionResetError(104, 'Connection reset by peer')",18,2026-11-08T21:12:39Z,2026-11-08T21:13:09Z
+GET,GET /locations,HTTPError('500 Server Error: Internal Server Error for url: GET /locations'),15,2026-11-08T21:12:08Z,2026-11-08T21:13:10Z
+POST,POST /auth/login,HTTPError('500 Server Error: Internal Server Error for url: POST /auth/login'),8,2026-11-08T21:12:08Z,2026-11-08T21:13:09Z
+POST,POST /bookings,CatchResponseError('HTTP 500'),10,2026-11-08T21:12:08Z,2026-11-08T21:13:10Z
+GET,GET /locations,HTTPError('401 Client Error: Unauthorized for url: GET /locations'),5,2026-11-08T21:12:08Z,2026-11-08T21:12:30Z
+GET,GET /bookings/my,HTTPError('401 Client Error: Unauthorized for url: GET /bookings/my'),3,2026-11-08T21:12:22Z,2026-11-08T21:12:39Z
+GET,GET /resources,HTTPError('401 Client Error: Unauthorized for url: GET /resources'),3,2026-11-08T21:12:13Z,2026-11-08T21:12:26Z

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Мої бронювання — WorkSpace</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <a class="logo" href="/">WorkSpace</a>
+      <nav>
+        <span class="muted" id="who"></span>
+        <a href="/admin.html" id="admin-link" class="hidden">Адмін-панель</a>
+        <button class="btn small ghost" onclick="logout()">Вийти</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h1 id="hello">Кабінет</h1>
+    <p class="muted">Оберіть ресурс і час — бронювання підтверджується одразу, якщо слот вільний.</p>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Ресурси</h2>
+        <label>Локація
+          <select id="location-filter"><option value="">Усі локації</option></select>
+        </label>
+        <div id="resources" style="margin-top: 12px"><p class="muted">Завантаження…</p></div>
+      </section>
+
+      <section class="card">
+        <h2>Нове бронювання</h2>
+        <form id="booking-form">
+          <label>Ресурс <select name="resource_id" id="resource-select" required></select></label>
+          <label>Дата <input type="date" name="date" required></label>
+          <div class="row">
+            <label>Початок <input type="time" name="start" value="10:00" step="1800" required></label>
+            <label>Кінець <input type="time" name="end" value="12:00" step="1800" required></label>
+          </div>
+          <button class="btn" type="submit">Забронювати</button>
+          <p class="msg" id="booking-msg"></p>
+        </form>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>Мої бронювання</h2>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Ресурс</th><th>Початок</th><th>Кінець</th><th>Статус</th><th></th></tr></thead>
+          <tbody id="my-bookings"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+  <script>
+    let resources = [];
+    let locations = [];
+
+    function resourceName(id) {
+      const r = resources.find((x) => x.id === id);
+      return r ? r.name : `#${id}`;
+    }
+
+    async function loadResources() {
+      const locId = document.getElementById("location-filter").value;
+      resources = await api("/resources" + (locId ? `?location_id=${locId}` : ""));
+      const box = document.getElementById("resources");
+      box.innerHTML = resources.length ? resources.map((r) => {
+        const loc = locations.find((l) => l.id === r.location_id);
+        return `<div class="resource">
+          <div><strong>${esc(r.name)}</strong><br>
+            <span class="muted">${esc(typeName(r.type))} · до ${r.capacity} осіб${loc ? " · " + esc(loc.name) : ""}</span></div>
+          <div>${Number(r.price_per_hour).toFixed(0)} грн/год</div>
+        </div>`;
+      }).join("") : '<p class="muted">Ресурсів поки немає.</p>';
+      document.getElementById("resource-select").innerHTML = resources
+        .map((r) => `<option value="${r.id}">${esc(r.name)}</option>`).join("");
+    }
+
+    async function loadBookings() {
+      const items = await api("/bookings/my");
+      items.sort((a, b) => b.starts_at.localeCompare(a.starts_at));
+      document.getElementById("my-bookings").innerHTML = items.length ? items.map((b) => `
+        <tr>
+          <td>${esc(resourceName(b.resource_id))}</td>
+          <td>${fmtDate(b.starts_at)}</td>
+          <td>${fmtDate(b.ends_at)}</td>
+          <td><span class="badge ${b.status}">${b.status === "confirmed" ? "підтверджено" : "скасовано"}</span></td>
+          <td>${b.status === "confirmed"
+            ? `<button class="btn small danger" onclick="cancelBooking(${b.id})">Скасувати</button>` : ""}</td>
+        </tr>`).join("") : '<tr><td colspan="5" class="muted">Бронювань поки немає.</td></tr>';
+    }
+
+    async function cancelBooking(id) {
+      try { await api(`/bookings/${id}/cancel`, { method: "POST" }); await loadBookings(); }
+      catch (err) { showMsg(document.getElementById("booking-msg"), err.message); }
+    }
+
+    document.getElementById("booking-form").onsubmit = async (e) => {
+      e.preventDefault();
+      const f = Object.fromEntries(new FormData(e.target));
+      const msg = document.getElementById("booking-msg");
+      const starts = new Date(`${f.date}T${f.start}`).toISOString();
+      const ends = new Date(`${f.date}T${f.end}`).toISOString();
+      try {
+        await api("/bookings", {
+          method: "POST",
+          body: { resource_id: Number(f.resource_id), starts_at: starts, ends_at: ends },
+        });
+        showMsg(msg, "Бронювання підтверджено", true);
+        await loadBookings();
+      } catch (err) { showMsg(msg, err.message); }
+    };
+
+    (async () => {
+      const me = await requireUser();
+      if (!me) return;
+      document.getElementById("who").textContent = me.email;
+      document.getElementById("hello").textContent = `Вітаємо, ${me.full_name}!`;
+      if (me.role === "admin") document.getElementById("admin-link").classList.remove("hidden");
+      const tomorrow = new Date(Date.now() + 86400000);
+      document.querySelector('[name="date"]').value = tomorrow.toISOString().slice(0, 10);
+
+      locations = await api("/locations");
+      const filter = document.getElementById("location-filter");
+      filter.innerHTML += locations
+        .map((l) => `<option value="${l.id}">${esc(l.name)}, ${esc(l.city)}</option>`).join("");
+      filter.onchange = loadResources;
+      await loadResources();
+      await loadBookings();
+    })();
+  </script>
+</body>
+</html>

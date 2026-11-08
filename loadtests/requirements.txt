@@ -1,0 +1,4 @@
+-r ../requirements.txt
+locust==2.47.0
+psutil==7.2.2
+matplotlib==3.11.2
